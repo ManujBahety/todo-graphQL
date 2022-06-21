@@ -1,30 +1,53 @@
 import React, { memo, ChangeEvent, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { addTodo, checkAll, uncheckAll } from "../actions/index";
-import { RootState } from "../store";
-import { ListItem, TodoReducerState } from "../utils/models";
-import Footer from "./footer";
-import Todo from "./todo";
+import { gql, useMutation, useQuery } from "@apollo/client";
+import Footer from "./Footer";
+import Todo from "./Todo";
+
+const TodoListQuery = gql`
+  query todos($options: PageQueryOptions) {
+    todos(options: $options) {
+      data {
+        id
+        title
+        completed
+      }
+    }
+  }
+`;
+
+const AddTodoQuery = gql`
+  mutation CreateTodo($input: CreateTodoInput!) {
+    createTodo(input: $input) {
+      id
+      title
+      completed
+    }
+  }
+`;
 
 const Header: React.FC = memo(() => {
-  const dispatch = useDispatch();
-  const { list, og } = useSelector(
-    (state: RootState) => state.todoReducers as TodoReducerState
-  );
+  const { data, refetch, loading } = useQuery(TodoListQuery, {
+    variables: {
+      options: { slice: { limit: 4 }, sort: { order: "DESC", field: "id" } },
+    },
+  });
+  const [addTodo] = useMutation(AddTodoQuery);
+
+  console.log("data=", data);
 
   const [inputData, setInputData] = useState<string>("");
   const [isChecked, setisChecked] = useState<boolean>(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    dispatch(addTodo(inputData));
+    addTodo({ variables: { input: { title: inputData, completed: false } } });
     setInputData("");
+    // refetch();
   };
 
   const handleCheck = (): void => {
     setisChecked(!isChecked);
-    if (isChecked === false) dispatch(checkAll());
-    else dispatch(uncheckAll());
+    // Have to write the logic
   };
 
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +55,7 @@ const Header: React.FC = memo(() => {
   };
 
   const renderFooter = () => {
-    if (og.length > 0) return <Footer />;
+    if (data.todos.data.length > 0) return <Footer />;
   };
 
   return (
@@ -58,12 +81,15 @@ const Header: React.FC = memo(() => {
         </div>
       </form>
       <div>
-        {list.map((element: ListItem) => (
-          <Todo key={element.id} list={element} />
-        ))}
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          data.todos.data.map((element: any) => {
+            return <Todo key={element.id} list={element} />;
+          })
+        )}
       </div>
-
-      {renderFooter()}
+      {loading ? <div></div> : renderFooter()}
     </div>
   );
 });

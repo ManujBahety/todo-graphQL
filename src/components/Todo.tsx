@@ -1,21 +1,38 @@
 import React, { memo, useState } from "react";
-import { deleteTodo } from "../actions/index";
+import { gql, useMutation } from "@apollo/client";
 import cross from "../assets/closee.png";
-import { useDispatch } from "react-redux";
-import { markTodo, unmarkTodo, changeTodo } from "../actions/index";
 import { ListItem } from "../utils/models";
 
 type TodoProps = {
   list: ListItem;
 };
 
+const UpdateTodoQuery = gql`
+  mutation UpdateTodo($id: ID!, $input: UpdateTodoInput!) {
+    updateTodo(id: $id, input: $input) {
+      id
+      title
+      completed
+    }
+  }
+`;
+
+const DeleteTodoQuery = gql`
+  mutation DeleteTodo($id: ID!) {
+    deleteTodo(id: $id) {
+      title
+    }
+  }
+`;
+
 const Todo = memo((props: TodoProps) => {
-  const { list } = props;
-  const dispatch = useDispatch();
+  const { title, id, completed } = props.list;
 
   const [toggle, setToggle] = useState<boolean>(true);
-  const [text, setText] = useState<string>(list.data);
-  const [completed, setCompleted] = useState<boolean>(false);
+  const [text, setText] = useState<string>(title);
+  const [isCompleted, setisCompleted] = useState<boolean>(false);
+  const [updateTodo] = useMutation(UpdateTodoQuery);
+  const [deleteTodo] = useMutation(DeleteTodoQuery);
 
   const toggleInput = (): void => {
     setToggle(false);
@@ -27,13 +44,16 @@ const Todo = memo((props: TodoProps) => {
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setText(event.target.value);
-    dispatch(changeTodo(list.id, text));
+    updateTodo({
+      variables: { id: id, input: { title: title, completed: isCompleted } },
+    });
   };
 
   const handleCheck = (): void => {
-    setCompleted(!completed);
-    if (completed === false) dispatch(markTodo(list.id, !completed));
-    else dispatch(unmarkTodo(list.id, !completed));
+    setisCompleted(!isCompleted);
+    updateTodo({
+      variables: { id: id, input: { title: title, completed: isCompleted } },
+    });
   };
 
   return (
@@ -44,14 +64,14 @@ const Todo = memo((props: TodoProps) => {
             <input
               className="w-7 h-7 focus:ring-1 bg-gray-100 border-r-indigo-500"
               type="checkbox"
-              checked={list.completed}
-              name={list.data}
+              checked={completed}
+              name={title}
               onChange={handleCheck}
             ></input>
           </div>
           <div>
             <label className="bg-white col-span-3 text-2xl italic">
-              {list.completed ? (
+              {completed ? (
                 <p className=" transition-all delay-50 line-through decoration-4 font-medium text-mercury-600">
                   {text}
                 </p>
@@ -76,7 +96,9 @@ const Todo = memo((props: TodoProps) => {
               src={cross}
               alt="Cross Icon"
               className=" hover:cursor-pointer"
-              onClick={() => dispatch(deleteTodo(list.id))}
+              onClick={() => {
+                deleteTodo({ variables: { id: id } });
+              }}
             ></img>
           </div>
         </div>

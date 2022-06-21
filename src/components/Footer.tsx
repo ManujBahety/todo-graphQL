@@ -1,37 +1,31 @@
 import React, { memo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../store";
 import { Filter } from "../utils/models";
 import { filters } from "../utils/constants";
-import {
-  CompletedTodo,
-  AllTodo,
-  ActiveTodo,
-  ClearMarked,
-} from "../actions/index";
+
 import FilterButtons from "./filterButtons";
 
 const Footer = memo(() => {
   const dispatch = useDispatch();
-  const count: number = useSelector(
-    (state: RootState) => state.todoReducers.count
-  );
+  // const count: number = useSelector(
+  //   (state: RootState) => state.todoReducers.count
+  // );
   const [activeFilter, setActiveFilter] = useState<Filter>(filters[0]);
 
   const handleComplete = () => {
-    dispatch(CompletedTodo());
+    // dispatch(CompletedTodo());
   };
 
   const handleActive = () => {
-    dispatch(ActiveTodo());
+    // dispatch(ActiveTodo());
   };
 
   const handleAll = () => {
-    dispatch(AllTodo());
+    // dispatch(AllTodo());
   };
 
   const handleClear = () => {
-    dispatch(ClearMarked());
+    // dispatch(ClearMarked());
   };
 
   const activateButton = (button: Filter) => {
@@ -60,7 +54,7 @@ const Footer = memo(() => {
     <footer className="text-center">
       <div className="grid grid-cols-[150px_350px_20px]  shadow-xl p-2 px-5 bg-white  box-border border-2 relative">
         <div className="flex gap-2 items-center">
-          <strong className="">{count}</strong>
+          <strong className="">1</strong>
           <span className="">Items left</span>
         </div>
 

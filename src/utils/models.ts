@@ -1,7 +1,7 @@
 type ListItem = {
   // rename to Item
   id: number;
-  data: string;
+  title: string;
   completed: boolean;
 };
 type Action = {
