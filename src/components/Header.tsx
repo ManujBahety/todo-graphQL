@@ -1,7 +1,9 @@
-import React, { memo, ChangeEvent, useState } from "react";
+import React, { memo, ChangeEvent, useState, useMemo } from "react";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import Footer from "./Footer";
 import Todo from "./Todo";
+import { Filter } from "../utils/models";
+import { filters } from "../utils/constants";
 
 const TodoListQuery = gql`
   query todos($options: PageQueryOptions) {
@@ -26,15 +28,17 @@ const AddTodoQuery = gql`
 `;
 
 const Header: React.FC = memo(() => {
-  const { data, refetch, loading } = useQuery(TodoListQuery, {
+  var count = 0;
+  const { data, loading } = useQuery(TodoListQuery, {
     variables: {
       options: { slice: { limit: 4 }, sort: { order: "DESC", field: "id" } },
     },
   });
+
   const [addTodo] = useMutation(AddTodoQuery);
 
   console.log("data=", data);
-
+  const [activeFilter, setActiveFilter] = useState<Filter>(filters[0]);
   const [inputData, setInputData] = useState<string>("");
   const [isChecked, setisChecked] = useState<boolean>(false);
 
@@ -42,12 +46,10 @@ const Header: React.FC = memo(() => {
     e.preventDefault();
     addTodo({ variables: { input: { title: inputData, completed: false } } });
     setInputData("");
-    // refetch();
   };
 
   const handleCheck = (): void => {
     setisChecked(!isChecked);
-    // Have to write the logic
   };
 
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
@@ -55,8 +57,33 @@ const Header: React.FC = memo(() => {
   };
 
   const renderFooter = () => {
-    if (data.todos.data.length > 0) return <Footer />;
+    if (data.todos.data.length > 0)
+      return (
+        <Footer
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          count={data.todos.data.length}
+        />
+      );
   };
+
+  const filteredData = useMemo(() => {
+    if (loading) return [];
+
+    if (activeFilter === filters[0]) return data.todos.data;
+
+    if (activeFilter === filters[1]) {
+      return data.todos.data.filter((element: any) => {
+        return element.completed === false;
+      });
+    }
+
+    if (activeFilter === filters[2]) {
+      return data.todos.data.filter((element: any) => {
+        return element.completed === true;
+      });
+    }
+  }, [data, activeFilter]);
 
   return (
     <div className="">
@@ -84,7 +111,7 @@ const Header: React.FC = memo(() => {
         {loading ? (
           <div>Loading...</div>
         ) : (
-          data.todos.data.map((element: any) => {
+          filteredData.map((element: any) => {
             return <Todo key={element.id} list={element} />;
           })
         )}
